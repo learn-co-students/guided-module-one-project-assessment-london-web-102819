@@ -65,7 +65,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  activerecord (~> 5.0)
+  activerecord (~> 5.2)
   faker
   pry
   require_all
