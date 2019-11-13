@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2019_11_11_230508) do
+ActiveRecord::Schema.define(version: 2019_11_13_095228) do
 
   create_table "appointments", force: :cascade do |t|
     t.integer "pianist_id"
@@ -23,12 +23,16 @@ ActiveRecord::Schema.define(version: 2019_11_11_230508) do
     t.string "instrumental_repertoire"
     t.string "voice_type"
     t.string "vocal_repertoire"
+    t.string "log_in_email"
+    t.string "password"
   end
 
   create_table "pianists", force: :cascade do |t|
     t.string "name"
     t.integer "years_of_experience"
     t.string "expertise"
+    t.string "log_in_email"
+    t.string "password"
   end
 
 end
