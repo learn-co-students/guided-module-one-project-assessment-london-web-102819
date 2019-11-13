@@ -3,15 +3,18 @@ require "pp"
 class CommandLineInterface
     attr_reader :new_in_house, :user_pianist, :user_collaborator
     def greet
-        puts "Welcome to this fabulous fake opera house! Here, you'll find the best repertoire with the most bizzare instruments~ Shall we begin?" 
+        puts "Welcome to this fabulous fake opera house! 
+        Here, you'll find the best repertoire with the most bizzare instruments~ 
+        Shall we begin?" 
     end
+
 
     def new_or_not
         puts "Are you new to the House? Y/N"
         a = gets.chomp
         loop do 
             if a.upcase == "Y"
-                puts "Welcome and let me show you our in house artists."
+                puts "Welcome and let's get you going."
                 create_new_account
                 break
             elsif a.upcase == "N"
@@ -23,6 +26,105 @@ class CommandLineInterface
                 break    
             end
         end
+    end 
+
+    def user_log_in
+        puts "Please type in your email address: "
+        user_email = gets.chomp
+        search_result = Pianist.find_by(log_in_email: user_email)
+        second_result =Collaborator.find_by(log_in_email: user_email)
+        if search_result!= nil
+            puts "Password, please"
+            user_password = gets.chomp
+            if search_result.password == user_password
+                puts "Welcome back!"
+            else 
+                puts "Something wasn't right. Try it again."
+                user_log_in 
+            end
+        elsif second_result !=nil 
+            puts "Password, please"
+            user_password = gets.chomp
+            if second_result.password == user_password
+                puts "Welcome back!"
+            else 
+                puts "Something wasn't right. Try it again."
+                user_log_in 
+            end
+        else
+            puts "Shall we try this again?"
+            user_log_in
+        end
+    end
+
+
+
+    def create_new_account 
+        puts "Are you a collaborator or a pianist?"
+        user_field = gets.chomp 
+        if user_field.upcase == "COLLABORATOR"
+            puts "Please state your Full Name" 
+            user_name = gets.chomp
+            new_collaborator(user_name)
+        elsif user_field.upcase == "PIANIST"
+            puts "Please state your Full Name" 
+            user_name = gets.chomp
+            new_pianist(user_name)
+        else
+            puts "Please type the entire word."
+            create_new_account
+        end
+    end
+
+    def new_pianist(user_name)
+        user=Collaborator.create(name: user_name)
+        puts "Your email address?"
+        user_email = gets.chomp
+        user.log_in_email = user_email
+        puts "Please set your password between 6 - 12 characters of lowercase letters and numbers:"
+        user_password = gets.chomp
+        user.password = user_password
+        user.save
+        puts "Now let's log you in~"
+        user_log_in 
+    end
+
+
+    def new_collaborator(user_name)
+        user=Collaborator.create(name: user_name)
+        puts "Are you an instrumentalist or a vocalist? i/v"
+        user_field = gets.chomp 
+        if user_field.upcase == "I"
+            puts "What is your  instrument?"
+            user_instrument = gets.chomp
+            user.instrument=user_instrument
+            puts "Your email address?"
+            user_email = gets.chomp
+            user.log_in_email = user_email
+            puts "Please set your password between 6 - 12 characters of lowercase letters and numbers:"
+            user_password = gets.chomp
+            user.password = user_password
+            user.save
+            puts "Now let's log you in~"
+            user_log_in 
+          
+        elsif user_field.upcase  == "V"
+            puts "What is your voice type?"
+            user_voice = gets.chomp
+            user.voice_type=user_voice 
+            puts "Your email address?"
+            user_email = gets.chomp
+            user.log_in_email = user_email
+            puts "Please set your password between 6 - 12 characters of lowercase letters and numbers:"
+            user_password = gets.chomp
+            user.password = user_password
+            user.save 
+            puts "Now let's log you in~"
+            user_log_in
+            
+        else
+            greet 
+        end 
     end 
 
     def your_field
