@@ -68,7 +68,7 @@ class CommandLineInterface
         clear_screen
         puts "Here, you'll find all of our collaborators information."
         puts Collaborator.in_house_collaborators_with_repertoire.map{|collab|
-            "#{collab.name} is working on #{collab.instrumental_repertoire==nil ?  collab.vocal_repertoire : collab.instrumental_repertoire}." 
+            "#{collab.name} is working on\n#{collab.instrumental_repertoire==nil ?  collab.vocal_repertoire : collab.instrumental_repertoire}.\n ==================================================" 
         }.sort
     end
 
