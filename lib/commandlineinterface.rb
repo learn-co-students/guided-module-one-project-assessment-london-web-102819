@@ -1,13 +1,14 @@
 require_relative '../config/environment.rb'
 
 class CommandLineInterface
-    attr_reader :user_pianist, :user_collaborator, :logged_in_user
+    # instance Pianist/Collaborator once the user has authenticated to an account
+    attr_reader :logged_in_user
 
     def greet
         puts "Welcome to this fabulous fake opera house! 
         Here, you'll find the best repertoire with the most bizzare instruments~ 
         Shall we begin?" 
-            new_or_not 
+        new_or_not 
     end
         
     def user_menu
@@ -15,7 +16,14 @@ class CommandLineInterface
             @prompt = TTY::Prompt.new
             input = @prompt. select(
                 "To continue, please browse our user menu.",
-                [ "New Appointment", "Cancel Appointment","View Your Appointment(s)","Update Information","In House Pianists","In House Collaborators", "Show Account Details","Exit"]
+                [ "New Appointment", 
+                    "Cancel Appointment",
+                    "View Your Appointment(s)",
+                    "Update Information",
+                    "In House Pianists",
+                    "In House Collaborators", 
+                    "Show Account Details","Exit"
+                ]
             )
             
             if input == "New Appointment"
@@ -31,9 +39,7 @@ class CommandLineInterface
             elsif input == "Update Information"
                 info_update
             elsif input == "Show Account Details"
-                puts "user_id: #{@logged_in_user.id}
-                      user_name: #{@logged_in_user.name}
-                      user_email: #{@logged_in_user.log_in_email}"
+                puts "user_id: #{@logged_in_user.id}\nuser_name: #{@logged_in_user.name}\nuser_email: #{@logged_in_user.log_in_email}"
             elsif input == "Exit"
                 return
             end
@@ -79,73 +85,98 @@ class CommandLineInterface
         puts "Keep in mind, deletion of appointments are not reversable."
         if @logged_in_user.class == Pianist
             puts "Please state your collaborator's full name."
-            collab_name = gets.chomp
-            if Collaborator.exist?(collab_name)
-                collaborator = Collaborator.all.find_by(name:collab_name)
-                appointment = Appointment.find_specific_appointment(@logged_in_user.id,collaborator.id)
-                appointment.delete_appointment
-                puts "Your appointment has been removed. Hope to see you soon!"
-            else 
-                puts "We can't seem to find such appointment."
-            end
+            collab_name = gets.chomp.strip
+            cancel_appointment_of_a_pianist(collab_name)
         elsif @logged_in_user.class == Collaborator 
             puts "Please state your pianist's full name."
-            pianist_name = gets.chomp
-            if Pianist.exist?(pianist_name)
-                pianist = Pianist.all.find_by(name: pianist_name)
-                appointment = Appointment.find_specific_appointment(pianist.id,@logged_in_user.id)
-                appointment.delete_appointment 
-                puts "Your appointment has been removed. Hope to see you soon!"
-            else 
-                puts "We can't seem to find such appointment."
-            end
+            pianist_name = gets.chomp.strip 
+            cancel_appointment_of_a_collaborator(pianist_name)
         end 
     end
-         
-            
+
+    def cancel_appointment_of_a_pianist(collab_name)
+        if Collaborator.exist?(collab_name)
+            collaborator = Collaborator.all.find_by(name:collab_name)
+            appointment = Appointment.find_specific_appointment(@logged_in_user.id,collaborator.id)
+            if appointment == nil
+                puts "I'm sorry. But it seems you've already canceled your appointment.\n Let's take another look at the menu: "
+            else 
+                appointment.delete_appointment 
+                puts "Your appointment has been removed. Hope to see you soon!"
+            end
+        else 
+            puts "We can't seem to find such appointment."
+        end
+    end
+
+    def cancel_appointment_of_a_collaborator(pianist_name)
+        if Pianist.exist?(pianist_name)
+            pianist = Pianist.all.find_by(name: pianist_name)
+            appointment = Appointment.find_specific_appointment(pianist.id,@logged_in_user.id)
+            if appointment == nil
+                puts "I'm sorry. But it seems you've already canceled your appointment.\n Let's take another look at the menu: "
+            else 
+                appointment.delete_appointment 
+                puts "Your appointment has been removed. Hope to see you soon!"
+            end
+        else 
+            puts "We can't seem to find such appointment."
+        end
+    end
 
     def new_appointment
         clear_screen
         puts "Welcome to our booking system."
         if @logged_in_user.class == Pianist
             puts "Please state your collaborator's full name.Or press 'm' for main menu."
-            collab_name = gets.chomp
+            collab_name = gets.chomp.strip 
             if collab_name.upcase == "M"
-                user_menu
+                nil #returns to user_menu
             else 
-                if Collaborator.exist?(collab_name)
-                    collaborator = Collaborator.all.find_by(name:collab_name)
-                    new_appointment = Appointment.create(pianist_id: @logged_in_user.id, collaborator_id: collaborator.id)
-                    puts "You are now working with #{collab_name}."
-                else
-                    puts "This artist isn't currently available in our house."
-                    new_collaborator = add_new_collaborator
-                    new_appointment = Appointment.create(pianist_id: @logged_in_user.id, collaborator_id: new_collaborator.id)
-                    puts "You are now working with #{new_collaborator.name}."
-                end
-                new_appointment 
+                new_appointment_of_pianist(collab_name)
             end
         elsif @logged_in_user.class == Collaborator 
             puts "Please state your pianist's full name.Or press 'm' for main menu."
-            #need a way to get out mid process
-            pianist_name = gets.chomp
+            pianist_name = gets.chomp.strip
             if pianist_name.upcase == "M"
-                user_menu
+                nil
             else 
-                if Pianist.exist?(pianist_name)
-                    pianist = Pianist.all.find_by(name: pianist_name)
-                    new_appointment = Appointment.create(pianist_id: pianist.id, collaborator_id: @logged_in_user.id)
-                    puts  "You are now working with #{pianist_name}."
-                else
-                    puts "This artist isn't currently available in our house."
-                    new_pianist = add_new_pianist
-                    new_appointment=Appointment.create(pianist_id: new_pianist.id, collaborator_id: @logged_in_user.id)
-                    puts "You are now working with #{new_pianist.name}."
-                end
-                new_appointment 
+                new_collaborator_of_collab(pianist_name)
             end 
         end 
         puts "Your appointment has been made. Please confirm via View Your Appointment(s)."
+    end
+
+    def new_collaborator_of_collab(pianist_name)
+        new_appointment = nil
+        if Pianist.exist?(pianist_name)
+            pianist = Pianist.all.find_by(name: pianist_name)
+            new_appointment = Appointment.create(pianist_id: pianist.id, collaborator_id: @logged_in_user.id)
+            puts  "You are now working with #{pianist_name}."
+        else
+            puts "This artist isn't currently available in our house."
+            new_pianist = add_new_pianist
+            if new_pianist != nil
+                new_appointment=Appointment.create(pianist_id: new_pianist.id, collaborator_id: @logged_in_user.id)
+                puts "You are now working with #{new_pianist.name}."
+            end
+        end
+    end
+
+    def new_appointment_of_pianist(collab_name)
+        new_collaborator = nil
+        if Collaborator.exist?(collab_name)
+            collaborator = Collaborator.all.find_by(name:collab_name)
+            new_appointment = Appointment.create(pianist_id: @logged_in_user.id, collaborator_id: collaborator.id)
+            puts "You are now working with #{collab_name}."
+        else
+            puts "This artist isn't currently available in our house."
+            new_collaborator = add_new_collaborator
+            if new_collaborator != nil
+                new_appointment = Appointment.create(pianist_id: @logged_in_user.id, collaborator_id: new_collaborator.id)
+                puts "You are now working with #{new_collaborator.name}."
+            end
+        end
     end
 
     def new_or_not
@@ -297,7 +328,7 @@ class CommandLineInterface
         puts "May I have his/her full name? Or press 'm' for main menu."
         new_pianist_name = gets.chomp
         if new_pianist_name.upcase == "M"
-            user_menu
+            nil
         else
             puts "What is his/her expertise(vocal/instrumental)?"
             new_pianist_expertise = gets.chomp 
@@ -312,7 +343,7 @@ class CommandLineInterface
         puts "May I have his/her full name? Or press 'm' for main menu."
         new_collaborator_name = gets.chomp
         if new_collaborator_name.upcase == "M"
-            user_menu
+            nil
         else
             puts "Is he/she an instrumentalist or a vocalist? i/v"
             new_collaborator_field = gets.chomp 
