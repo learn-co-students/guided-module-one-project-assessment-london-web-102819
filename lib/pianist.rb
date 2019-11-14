@@ -11,5 +11,9 @@ class Pianist<ActiveRecord::Base
         self.all.find_by(name: pianist_name)!= nil
     end
   
+  
+
+  
+
     
 end

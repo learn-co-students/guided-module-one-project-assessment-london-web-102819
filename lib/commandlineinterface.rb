@@ -41,6 +41,7 @@ class CommandLineInterface
     end
 
     def info_update
+        clear_screen
         puts "We are currently only allowing our collaborators to update their repertoire information."
         if  @logged_in_user.class == Collaborator 
             puts "Are you updating your (i) instrumental repertoire or (v) vocal repertoire?"
@@ -58,21 +59,23 @@ class CommandLineInterface
     end 
 
     def in_house_collaborators
+        clear_screen
         puts "Here, you'll find all of our collaborators information."
-        puts Collaborator.all.map{|collab|
-            "#{collab.name} is working on #{collab.instrumental_repertoire==nil ?  collab.vocal_repertoire : collab.instrumental_repertoire}."
-        }
+        puts Collaborator.in_house_collaborators_with_repertoire.map{|collab|
+            "#{collab.name} is working on #{collab.instrumental_repertoire==nil ?  collab.vocal_repertoire : collab.instrumental_repertoire}." 
+        }.sort
     end
 
     def in_house_pianists
+        clear_screen
         puts "Here, you'll find all of our pianists information."
         puts Pianist.all.map{|pianist|
-            "Pianist #{pianist.name} is an expert in #{pianist.expertise}. 
-            To contact him/her: #{pianist.log_in_email}"
+            "Pianist #{pianist.name} is an expert in #{pianist.expertise}.\n To contact him/her: #{pianist.log_in_email} \n========================================="
         }
     end 
 
     def cancel_appointment
+        clear_screen
         puts "Keep in mind, deletion of appointments are not reversable."
         if @logged_in_user.class == Pianist
             puts "Please state your collaborator's full name."
@@ -80,7 +83,8 @@ class CommandLineInterface
             if Collaborator.exist?(collab_name)
                 collaborator = Collaborator.all.find_by(name:collab_name)
                 appointment = Appointment.find_specific_appointment(@logged_in_user.id,collaborator.id)
-                appointment.destroy
+                appointment.delete_appointment
+                puts "Your appointment has been removed. Hope to see you soon!"
             else 
                 puts "We can't seem to find such appointment."
             end
@@ -90,42 +94,58 @@ class CommandLineInterface
             if Pianist.exist?(pianist_name)
                 pianist = Pianist.all.find_by(name: pianist_name)
                 appointment = Appointment.find_specific_appointment(pianist.id,@logged_in_user.id)
-                appointment.destroy
+                appointment.delete_appointment 
+                puts "Your appointment has been removed. Hope to see you soon!"
             else 
                 puts "We can't seem to find such appointment."
             end
-        end
-        puts "Your appointment has been removed. Hope to see you soon!"
+        end 
     end
          
             
 
     def new_appointment
+        clear_screen
         puts "Welcome to our booking system."
         if @logged_in_user.class == Pianist
-            puts "Please state your collaborator's full name."
+            puts "Please state your collaborator's full name.Or press 'm' for main menu."
             collab_name = gets.chomp
-            if Collaborator.exist?(collab_name)
-                collaborator = Collaborator.all.find_by(name:collab_name)
-                new_appointment = Appointment.create(pianist_id: @logged_in_user.id, collaborator_id: collaborator.id)
-            else
-                puts "This artist isn't currently available in our house."
-                new_collaborator = add_new_collaborator
-                new_appointment = Appointment.create(pianist_id: @logged_in_user.id, collaborator_id: new_collaborator.id)
+            if collab_name.upcase == "M"
+                user_menu
+            else 
+                if Collaborator.exist?(collab_name)
+                    collaborator = Collaborator.all.find_by(name:collab_name)
+                    new_appointment = Appointment.create(pianist_id: @logged_in_user.id, collaborator_id: collaborator.id)
+                    puts "You are now working with #{collab_name}."
+                else
+                    puts "This artist isn't currently available in our house."
+                    new_collaborator = add_new_collaborator
+                    new_appointment = Appointment.create(pianist_id: @logged_in_user.id, collaborator_id: new_collaborator.id)
+                    puts "You are now working with #{new_collaborator.name}."
+                end
+                new_appointment 
             end
         elsif @logged_in_user.class == Collaborator 
-            puts "Please state your pianist's full name."
+            puts "Please state your pianist's full name.Or press 'm' for main menu."
+            #need a way to get out mid process
             pianist_name = gets.chomp
-            if Pianist.exist?(pianist_name)
-                pianist = Pianist.all.find_by(name: pianist_name)
-                new_appointment = Appointment.create(pianist_id: pianist.id, collaborator_id: @logged_in_user.id)
-            else
-                puts "This artist isn't currently available in our house."
-                new_pianist = add_new_pianist
-                new_appointment=Appointment.create(pianist_id: new_pianist.id, collaborator_id: @logged_in_user.id)
-            end
+            if pianist_name.upcase == "M"
+                user_menu
+            else 
+                if Pianist.exist?(pianist_name)
+                    pianist = Pianist.all.find_by(name: pianist_name)
+                    new_appointment = Appointment.create(pianist_id: pianist.id, collaborator_id: @logged_in_user.id)
+                    puts  "You are now working with #{pianist_name}."
+                else
+                    puts "This artist isn't currently available in our house."
+                    new_pianist = add_new_pianist
+                    new_appointment=Appointment.create(pianist_id: new_pianist.id, collaborator_id: @logged_in_user.id)
+                    puts "You are now working with #{new_pianist.name}."
+                end
+                new_appointment 
+            end 
         end 
-        puts "Your appointment has been confirmed. Please check your appointments."
+        puts "Your appointment has been made. Please confirm via View Your Appointment(s)."
     end
 
     def new_or_not
@@ -148,12 +168,11 @@ class CommandLineInterface
         search_result = Pianist.find_by(log_in_email: user_email)
         second_result =Collaborator.find_by(log_in_email: user_email)
         @logged_in_user = search_result || second_result
-        # binding.pry 
         if search_result!= nil
             puts "Password, please"
             user_password = gets.chomp
             if search_result.password == user_password
-                puts "#{logged_in_user.name}~ Welcome back!"
+                puts "#{@logged_in_user.name}~ Welcome back!"
                 user_menu
             else 
                 puts "Something wasn't right. Try it again."
@@ -226,7 +245,6 @@ class CommandLineInterface
             Collaborator.create_new_instru_collaborator(collaborator_info)
             puts "Now let's log you in~"
             user_log_in 
-          
         elsif user_field.upcase  == "V"
             puts "What is your voice type?"
             user_voice = gets.chomp
@@ -240,90 +258,80 @@ class CommandLineInterface
             Collaborator.create_new_vocal_collaborator(collaborator_info)
             puts "Now let's log you in~"
             user_log_in
-            
         else
             greet 
         end 
     end 
 
     def view_appointments
+        clear_screen
         if @logged_in_user.class == Pianist
-            callabs = @logged_in_user.collaborators 
+            @logged_in_user.collaborators.reload
+            callabs = @logged_in_user.collaborators
             if callabs == [ ] 
-                puts "These are all current appointments and your name isn't found."
-                puts  Appointment.all.map{|app| "#{app.pianist.name} is working with #{app.collaborator.name}."}.sort
+                puts "I'm sorry, but your name isn't found in our current appointments below: "
+                puts  Appointment.current_appointments
             else 
-                puts "These are your current collaborators."
+                puts "These are your collaborators."
                 instrumentalists =callabs.select{|each| each.instrument!=nil}
                 vocalists = callabs.select{|each| each.voice_type!=nil}
-                puts "You are currently working with #{instrumentalists.size + vocalists.size } artists. They are: "
+                puts "You are currently working with #{instrumentalists.size + vocalists.size } artist(s):  "
                 puts instrumentalists.map{|each|  "#{each.name} is an instrumentalist. Instrument:#{each.instrument}"}.sort 
                 puts vocalists.map{|each|  "#{each.name} is an vocalist. Voice type: #{each.voice_type}"}.sort
             end
-        elsif @logged_in_user.class == Collaborator 
+        elsif @logged_in_user.class == Collaborator
+            @logged_in_user.pianists.reload  
             pianists = @logged_in_user.pianists   
             if pianists == [ ] 
-                puts "These are all current appointments and your name isn't found."
-                puts Appointment.all.map{|app| "#{app.pianist.name} is working with #{app.collaborator.name}."}.sort
+                puts  "I'm sorry, but your name isn't found in our current appointments below: "
+                puts Appointment.current_appointments
             else
                 puts "Let me show you your pianist(s)."
-                puts pianists.map{|each| "Currently, #{each.name} is your pianist."}
+                puts pianists.map{|pianist| "Currently, #{pianist.name} is your pianist."}
             end 
         end     
     end 
 
     def add_new_pianist
         puts "Didn't you see your pianist's name? Should we invite him/her? Commence invitation:"
-        puts "May I have his/her full name?" 
+        puts "May I have his/her full name? Or press 'm' for main menu."
         new_pianist_name = gets.chomp
-        puts "What is his/her expertise(vocal/instrumental)?"
-        new_pianist_expertise = gets.chomp 
-        new_pianist = Pianist.create(name: new_pianist_name, expertise: new_pianist_expertise)
-        puts "There, we've taken care of inviting your pianist #{new_pianist.name}. Welcome to the house!"    
-        new_pianist
+        if new_pianist_name.upcase == "M"
+            user_menu
+        else
+            puts "What is his/her expertise(vocal/instrumental)?"
+            new_pianist_expertise = gets.chomp 
+            new_pianist = Pianist.create(name: new_pianist_name, expertise: new_pianist_expertise)
+            puts "There, we've taken care of inviting your pianist #{new_pianist.name}. Welcome to the house!"    
+            new_pianist
+        end
     end
 
     def add_new_collaborator
         puts "Didn't you see your collaborator's name? Should we invite him/her? Commence invitation:"
-        puts "May I have his/her full name?" 
+        puts "May I have his/her full name? Or press 'm' for main menu."
         new_collaborator_name = gets.chomp
-        puts "Is he/her an instrumentalist or a vocalist? i/v"
-        new_collaborator_field = gets.chomp 
-        if new_collaborator_field.upcase == "I"
-            puts "What is his/her instrument?"
-            instrument= gets.chomp
-            new_collaborator = Collaborator.create(name: new_collaborator_name, instrument: instrument)
-            puts "Have fun making music with #{new_collaborator.name}!"
-        elsif  new_collaborator_field.upcase == "V"
-            puts "What is his/her voice type?"
-            voice_type= gets.chomp
-            new_collaborator = Collaborator.create(name: new_collaborator_name, voice_type: voice_type)
-            puts "Have fun making music with #{new_collaborator.name}!"
-        end   
-        new_collaborator 
+        if new_collaborator_name.upcase == "M"
+            user_menu
+        else
+            puts "Is he/she an instrumentalist or a vocalist? i/v"
+            new_collaborator_field = gets.chomp 
+            if new_collaborator_field.upcase == "I"
+                puts "What is his/her instrument?"
+                instrument= gets.chomp
+                new_collaborator = Collaborator.create(name: new_collaborator_name, instrument: instrument)
+                puts "Have fun making music with #{new_collaborator.name}!"
+            elsif  new_collaborator_field.upcase == "V"
+                puts "What is his/her voice type?"
+                voice_type= gets.chomp
+                new_collaborator = Collaborator.create(name: new_collaborator_name, voice_type: voice_type)
+                puts "Have fun making music with #{new_collaborator.name}!"
+            end  
+            new_collaborator 
+        end 
     end
-
-    # def who_is_working
-    #     puts "Which pianist's work load would you like to see? Please type his/her full name [Full Name]."
-    #     pianist=gets.chomp
-    #     if Pianist.find_by(name: pianist)==nil 
-    #         puts "I'm terribly sorry. But that pianist does not work for us yet."
-    #     else 
-    #         Pianist.find_by(name:pianist).collaborators.map{|each|
-    #         puts "#{pianist} is currently working with #{each.name} on #{each.instrumental_repertoire!=nil ? each.instrumental_repertoire : each.vocal_repertoire}"}
-    #     end 
-    # end
-
-    # def update_experience
-    #     puts "Congratulations! Yet another year~ Tell me your Full Name ^_^"
-    #     pianist_name = gets.chomp
-    #     pianist = Pianist.find_by(name:pianist_name)
-    #     if pianist !=nil 
-    #         pianist.years_of_experience +=1
-    #         pianist.save 
-    #         puts "Take care! And best of luck on your future journeys!"
-    #     else
-    #         puts "Ooops! This pianist does not appear to exist in our book. Until next time~"
-    #     end
-    # end
+    
+    def clear_screen
+        system 'clear'
+    end
 end

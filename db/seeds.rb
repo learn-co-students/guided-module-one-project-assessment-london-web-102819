@@ -1,3 +1,7 @@
+Pianist.destroy_all
+Collaborator.destroy_all
+Appointment.destroy_all
+
 45.times do |i|
     Pianist.create(name: Faker::Name.name, years_of_experience: Faker::Number.within(range:1..20), expertise: ["instrumental", "vocal"].sample,
     log_in_email: Faker::Internet.email, password: Faker::Alphanumeric.alphanumeric(number: 6..12))

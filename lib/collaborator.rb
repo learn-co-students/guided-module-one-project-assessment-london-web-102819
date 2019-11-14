@@ -25,5 +25,36 @@ class Collaborator<ActiveRecord::Base
         self.update(vocal_repertoire: new_rep)
     end 
         
+    def self.instrumentalists
+        self.all.select{|collab| collab.instrument!=nil}
+    end
+
+    def self.vocalists
+        self.all.select{|collab| collab.voice_type !=nil}
+    end 
+
+    def self.vocalists_repertoire
+        self.instrumentalists.select{|instrumentalist| instrumentalist.vocal_repertoire!=nil}
+    end 
+
+    def self.instrumentalists_repertoire
+        self.instrumentalists.select{|instrumentalist| instrumentalist.instrumental_repertoire!=nil}
+        # instrumentalists_rep = [
+        #     [["Name"], ["Instrumental Repertoire"]]
+        # ]
+        # # binding.pry
+        # instrumentalists.map {|instrumentalist|
+        #     [instrumentalists_repertoire <<
+        #         [["#{instrumentalist.name}"], ["#{instrumentalist.instrumental_repertoire}"]]
+        #     ] 
+        # }
+    end
+    
+    def self.in_house_collaborators_with_repertoire
+        self.select{|collab|
+            collab.instrumental_repertoire!=nil ||  collab.vocal_repertoire!=nil
+        }
+    end
+ 
  
 end
