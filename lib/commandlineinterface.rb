@@ -248,14 +248,20 @@ class CommandLineInterface
         new_pianist_info = {name: user_name}
         puts "Your email address?"
         user_email = gets.chomp
-        new_pianist_info[:log_in_email] = user_email
-        puts "Please set your password between 6 - 12 characters of lowercase letters and numbers:"
-        user_password = gets.chomp
-        new_pianist_info[:password] = user_password
-        # user.save
-        Pianist.create(new_pianist_info)
-        puts "Now let's log you in~"
-        user_log_in 
+        result= Pianist.valid_sign_up?(user_email)
+        if result == true
+            new_pianist_info[:log_in_email] = user_email
+            puts "Please set your password between 6 - 12 characters of lowercase letters and numbers:"
+            user_password = gets.chomp
+            new_pianist_info[:password] = user_password
+            # user.save
+            Pianist.create(new_pianist_info)
+            puts "Now let's log you in~"
+            user_log_in 
+        else
+            puts "I'm terribly sorry, but your email exists in our log in system already."
+            greet 
+        end
     end
 
 
@@ -269,26 +275,38 @@ class CommandLineInterface
             collaborator_info[:instrument] = user_instrument
             puts "Your email address?"
             user_email = gets.chomp
-            collaborator_info[:log_in_email] = user_email
-            puts "Please set your password between 6 - 12 characters of lowercase letters and numbers:"
-            user_password = gets.chomp
-            collaborator_info[:password] = user_password
-            Collaborator.create_new_instru_collaborator(collaborator_info)
-            puts "Now let's log you in~"
-            user_log_in 
+            result= Collaborator.valid_sign_up?(user_email)
+            if result == true
+                collaborator_info[:log_in_email] = user_email
+                puts "Please set your password between 6 - 12 characters of lowercase letters and numbers:"
+                user_password = gets.chomp
+                collaborator_info[:password] = user_password
+                Collaborator.create_new_instru_collaborator(collaborator_info)
+                puts "Now let's log you in~"
+                user_log_in 
+            else 
+                puts "I'm terribly sorry, but your email exists in our log in system already."
+                 greet 
+            end 
         elsif user_field.upcase  == "V"
             puts "What is your voice type?"
             user_voice = gets.chomp
             collaborator_info[:voice_type]=user_voice 
             puts "Your email address?"
             user_email = gets.chomp
-            collaborator_info[:log_in_email] = user_email
-            puts "Please set your password between 6 - 12 characters of lowercase letters and numbers:"
-            user_password = gets.chomp
-            collaborator_info[:password] = user_password
-            Collaborator.create_new_vocal_collaborator(collaborator_info)
-            puts "Now let's log you in~"
-            user_log_in
+            result= Collaborator.valid_sign_up?(user_email)
+            if result == true
+                collaborator_info[:log_in_email] = user_email
+                puts "Please set your password between 6 - 12 characters of lowercase letters and numbers:"
+                user_password = gets.chomp
+                collaborator_info[:password] = user_password
+                Collaborator.create_new_vocal_collaborator(collaborator_info)
+                puts "Now let's log you in~"
+                user_log_in
+            else 
+                puts "I'm terribly sorry, but your email exists in our log in system already."
+                greet 
+            end
         else
             greet 
         end 

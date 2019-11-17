@@ -18,7 +18,7 @@ end
     end  
 end
 
-36..12.times do |i|
+36.times do |i|
     Appointment.create(pianist_id: Pianist.all.sample.id,collaborator_id: Collaborator.all.sample.id)
 end
 
